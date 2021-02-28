@@ -21,7 +21,7 @@ const userController = {
 
       if (!user) return res.status(404).send({ error: "User was not found!" });
 
-      return res.send(user);
+      return res.status(200).send(user);
     } catch {
       return res.status(404).send({ error: err });
     }
