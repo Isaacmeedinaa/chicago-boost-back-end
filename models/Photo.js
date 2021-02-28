@@ -32,8 +32,8 @@ const photoValidator = (photo) => {
       "string.min": "Public ID should be at least 1 character long.",
       "any.required": "Public ID is required.",
     }),
-    user: Joi.objectId().messages({
-      "any.required": "User is required.",
+    deal: Joi.objectId().messages({
+      "any.required": "Deal is required.",
     }),
   }).options({ abortEarly: false });
 
