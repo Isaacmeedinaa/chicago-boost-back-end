@@ -1,7 +1,7 @@
 require("dotenv").config();
 const jsonwebtoken = require("jsonwebtoken");
 
-const jwtMiddleware = (req, res, next) => {
+const userJwtMiddleware = (req, res, next) => {
   if (req.params.id === "null") {
     next();
     return;
@@ -21,4 +21,4 @@ const jwtMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = jwtMiddleware;
+module.exports = userJwtMiddleware;
