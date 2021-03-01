@@ -1,9 +1,5 @@
 const _ = require("lodash");
-const {
-  Location,
-  locationSchema,
-  locationValidator,
-} = require("../models/Location");
+const { Location, locationValidator } = require("../models/Location");
 
 const locationController = {
   getLocations: async (req, res) => {
@@ -37,6 +33,8 @@ const locationController = {
     let location = new Location(
       _.pick(req.body, [
         "name",
+        "phoneNumber",
+        "facebookLink",
         "addressLineOne",
         "addressLineTwo",
         "city",
@@ -68,6 +66,8 @@ const locationController = {
         req.params.id,
         {
           name: req.body.name,
+          phoneNumber: req.body.phoneNumber,
+          facebookLink: req.body.facebookLink,
           addressLineOne: req.body.addressLineOne,
           addressLineTwo: req.body.addressLineTwo,
           city: req.body.city,

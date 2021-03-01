@@ -3,6 +3,8 @@ const Joi = require("joi");
 
 const locationSchema = new mongoose.Schema({
   name: { type: String, min: 1, required: true },
+  phoneNumber: { type: String, min: 11, max: 11, required: true },
+  facebookLink: { type: String, min: 1 },
   addressLineOne: { type: String, min: 1, required: true },
   addressLineTwo: { type: String },
   city: { type: String, min: 1, required: true },
@@ -28,6 +30,19 @@ const locationValidator = (location) => {
       "string.empty": "Location name cannot be empty.",
       "string.min": "Location name should be at least 1 character long.",
       "any.required": "Location name is required.",
+    }),
+    phoneNumber: Joi.string().min(11).max(11).required().messages({
+      "string.base": "Phone number must be a string.",
+      "string.empty": "Phone number cannot be empty.",
+      "string.min": "Phone number should be at least 11 character long.",
+      "string.max": "State should not be over 11 characters long.",
+      "any.required": "Phone number is required.",
+    }),
+    facebookLink: Joi.string().min(1).messages({
+      "string.base": "Facebook link must be a string.",
+      "string.empty": "Facebook link cannot be empty.",
+      "string.min": "Facebook link should be at least 1 character long.",
+      "any.required": "Facebook link is required.",
     }),
     addressLineOne: Joi.string().min(1).required().messages({
       "string.base": "Address line one name must be a string.",
