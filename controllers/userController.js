@@ -10,6 +10,9 @@ const { RecoveryCode } = require("../models/RecoveryCode");
 
 const userController = {
   getUsers: async (req, res) => {
+    if (!req.user.admin)
+      return res.status(401).send({ message: "Unathorized!" });
+
     const users = await User.find().select("-__v -password -pushToken");
     return res.status(200).send(users);
   },
@@ -48,18 +51,21 @@ const userController = {
       return res.status(400).send({ message: "Phone number is taken!" });
 
     user = await User.findOne({ email: req.body.pushToken });
-    if (user) return res.status(400).send({ message: "Pusk token is taken!" });
+    if (user) return res.status(400).send({ message: "Push token is taken!" });
 
-    user = new User(
-      _.pick(req.body, [
-        "firstName",
-        "lastName",
-        "email",
-        "phoneNumber",
-        "password",
-        "pushToken",
-      ])
-    );
+    let userArray = req.body.pushToken
+      ? [
+          "firstName",
+          "lastName",
+          "email",
+          "phoneNumber",
+          "password",
+          "pushToken",
+          "admin",
+        ]
+      : ["firstName", "lastName", "email", "phoneNumber", "password", "admin"];
+
+    user = new User(_.pick(req.body, userArray));
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
@@ -92,6 +98,7 @@ const userController = {
       phoneNumber: req.body.phoneNumber,
       password: userPassword.password,
       pushToken: req.body.pushToken,
+      admin: req.body.admin,
     };
 
     const { error } = userValidator(user);
