@@ -1,10 +1,11 @@
-const mongoose = require("mongoose");
 const _ = require("lodash");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
+const { Expo } = require("expo-server-sdk");
+const { User } = require("../models/User");
 const { Deal, dealValidator } = require("../models/Deal");
 const { Photo, photoValidator } = require("../models/Photo");
-const { Location, locationValidator } = require("../models/Location");
+const { Location } = require("../models/Location");
 
 const dealController = {
   getDeals: async (req, res) => {
@@ -123,7 +124,38 @@ const dealController = {
       .populate("locations", "-__v")
       .select("-__v");
 
-    return res.status(200).send(deal);
+    res.status(200).send(deal);
+
+    let expo = new Expo();
+    let users = await User.find().select("pushToken -_id");
+    let usersWithPushToken = users.filter((user) => user.pushToken);
+    let pushTokens = usersWithPushToken.map((user) => user.pushToken);
+
+    let messages = [];
+    for (const pushToken of pushTokens) {
+      if (!Expo.isExpoPushToken(pushToken)) {
+        console.log(`Push token ${pushToken} is not a valid Expo push token`);
+        continue;
+      }
+
+      messages.push({
+        to: pushToken,
+        sound: "default",
+        title: "New Deal!",
+        body: "There is a new deal available! Check it out.",
+      });
+    }
+
+    let chunks = expo.chunkPushNotifications(messages);
+    (async () => {
+      for (const chunk of chunks) {
+        try {
+          await expo.sendPushNotificationsAsync(chunk);
+        } catch (err) {
+          console.log(error);
+        }
+      }
+    })();
   },
   updateDeal: async (req, res) => {
     const photos = req.files;

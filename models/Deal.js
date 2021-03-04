@@ -6,9 +6,7 @@ const dealSchema = new mongoose.Schema({
   description: { type: String, min: 1, max: 250, required: true },
   startDate: { type: Date, default: Date.now, required: true },
   endDate: { type: Date, required: true },
-  photos: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "Photo", required: true },
-  ],
+  photos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Photo" }],
   locations: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Location", required: true },
   ],
