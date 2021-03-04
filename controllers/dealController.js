@@ -141,7 +141,7 @@ const dealController = {
       messages.push({
         to: pushToken,
         sound: "default",
-        title: "Chicago Boost",
+        title: "New Deal!",
         body: "There is a new deal available! Check it out.",
       });
     }
