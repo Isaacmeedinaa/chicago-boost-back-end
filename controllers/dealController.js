@@ -142,6 +142,7 @@ const dealController = {
         to: pushToken,
         sound: "default",
         title: "New Deal!",
+        badge: 1,
         body: "There is a new deal available! Check it out.",
       });
     }
