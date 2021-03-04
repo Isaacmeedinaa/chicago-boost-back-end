@@ -18,7 +18,7 @@ const authController = {
         .status(401)
         .send({ message: "Invalid phone number or password!" });
 
-    user = await User.findById(user._id).select("-__v -password -pushToken");
+    user = await User.findById(user._id).select("-__v -password");
 
     const token = user.generateAuthToken();
 
@@ -31,9 +31,7 @@ const authController = {
   },
   autoUserLogin: async (req, res) => {
     try {
-      const user = await User.findById(req.user._id).select(
-        "-__v -password -pushToken"
-      );
+      const user = await User.findById(req.user._id).select("-__v -password");
 
       if (!user)
         return res.status(400).send({ message: "User was not found." });

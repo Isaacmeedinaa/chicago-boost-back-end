@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
   {
     firstName: { type: String, min: 1, required: true },
     lastName: { type: String, min: 1, required: true },
-    email: { type: String, min: 1, max: 255, unique: true, required: false },
+    email: { type: String, min: 1, max: 255, unique: true, required: true },
     phoneNumber: {
       type: String,
       min: 11,
@@ -21,7 +21,6 @@ const userSchema = new mongoose.Schema(
     pushToken: {
       type: String,
       min: 1,
-      unique: true,
       required: false,
       index: true,
       sparse: true,
@@ -73,11 +72,12 @@ const userValidator = (user) => {
       "any.required": "Last name is required.",
       "string.min": "Last name should at least be 1 characters long.",
     }),
-    email: Joi.string().min(1).max(255).email().messages({
+    email: Joi.string().min(1).max(255).email().required().messages({
       "string.base": "Email should be a string.",
       "string.min": "Email should at least be 1 characters long.",
       "string.max": "Email should not be over 255 characters long.",
       "string.email": "Email must be a valid email.",
+      "any.required": "Email is required.",
     }),
     phoneNumber: Joi.string().min(11).max(11).required().messages({
       "string.base": "Phone number should be a string.",

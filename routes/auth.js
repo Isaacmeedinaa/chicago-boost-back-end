@@ -5,7 +5,7 @@ const authController = require("../controllers/authController");
 const router = express.Router();
 
 router.post("/user-login", authController.userLogin);
-router.post(
+router.get(
   "/auto-user-login",
   [userJwtMiddleware],
   authController.autoUserLogin

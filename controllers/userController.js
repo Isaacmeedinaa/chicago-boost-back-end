@@ -13,14 +13,12 @@ const userController = {
     if (!req.user.admin)
       return res.status(401).send({ message: "Unathorized!" });
 
-    const users = await User.find().select("-__v -password -pushToken");
+    const users = await User.find().select("-__v -password");
     return res.status(200).send(users);
   },
   getUser: async (req, res) => {
     try {
-      const user = await User.findById(req.params.id).select(
-        "-__v -password -pushToken"
-      );
+      const user = await User.findById(req.params.id).select("-__v -password");
 
       if (!user) return res.status(404).send({ error: "User was not found!" });
 
@@ -44,14 +42,22 @@ const userController = {
     let user;
 
     user = await User.findOne({ email: req.body.email });
-    if (user) return res.status(400).send({ message: "Email is taken!" });
+    if (user)
+      return res
+        .status(400)
+        .send({ field: "email", message: "Email is taken!" });
 
     user = await User.findOne({ phoneNumber: req.body.phoneNumber });
     if (user)
-      return res.status(400).send({ message: "Phone number is taken!" });
+      return res
+        .status(400)
+        .send({ field: "phoneNumber", message: "Phone number is taken!" });
 
     user = await User.findOne({ email: req.body.pushToken });
-    if (user) return res.status(400).send({ message: "Push token is taken!" });
+    if (user)
+      return res
+        .status(400)
+        .send({ field: "pushToken", message: "Push token is taken!" });
 
     let userArray = req.body.pushToken
       ? [
@@ -72,7 +78,7 @@ const userController = {
 
     user = await user.save();
 
-    user = await User.findById(user._id).select("-__v -password -pushToken");
+    user = await User.findById(user._id).select("-__v -password");
 
     const token = user.generateAuthToken();
 
@@ -89,7 +95,7 @@ const userController = {
     );
 
     if (!userPassword)
-      return res.send(404).send({ message: "User not found!" });
+      return res.send(404).send({ message: "User was not found!" });
 
     let user = {
       firstName: req.body.firstName,
@@ -122,15 +128,16 @@ const userController = {
           phoneNumber: req.body.phoneNumber,
           password: userPassword.password,
           pushToken: req.body.pushToken,
+          admin: req.body.admin,
         },
         {
           new: true,
         }
-      ).select("-__v -password -pushToken");
+      ).select("-__v -password");
 
       if (!user) return res.status(404).send({ error: "User was not found!" });
 
-      return res.send(user);
+      return res.status(200).send(user);
     } catch (err) {
       return res.status(404).send({ error: err });
     }
@@ -138,7 +145,10 @@ const userController = {
   generateRecoveryCode: async (req, res) => {
     const user = await User.findOne({ phoneNumber: req.body.phoneNumber });
     if (!user)
-      return res.status(404).send({ message: "Phone number does not exist!" });
+      return res.status(404).send({
+        field: "phoneNumber",
+        message: "Phone number does not exist!",
+      });
 
     let code = randomize("0", 6);
     let recoveryCode = await RecoveryCode.findOne({ code: code });
@@ -162,7 +172,7 @@ const userController = {
       .create({
         body: `Your recovery code is ${recoveryCode.code}. If you did not request a code, please ignore this message.`,
         messagingServiceSid: "MG8d321409bf416cf4cacb714821e0220c",
-        to: `+1${user.phoneNumber}`,
+        to: `+${user.phoneNumber}`,
       })
       .then((message) => console.log(message))
       .done();
@@ -182,13 +192,15 @@ const userController = {
         user.password
       );
       if (!validPassword)
-        return res.status(401).send({ message: "Password is incorrect!" });
+        return res
+          .status(401)
+          .send({ field: "password", message: "Password is incorrect!" });
 
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.newPassword, salt);
 
       user = await user.save();
-      user = await User.findById(user._id).select("-__v -password -pushToken");
+      user = await User.findById(user._id).select("-__v -password");
 
       return res.status(200).send(user);
     } else if (
@@ -196,21 +208,35 @@ const userController = {
       req.body.recoveryCode &&
       req.body.newPassword
     ) {
-      const recoveryCode = await RecoveryCode.findOne({
+      let recoveryCode = await RecoveryCode.findOne({
         code: req.body.recoveryCode,
       }).populate("user");
       if (!recoveryCode)
-        return res.status(404).send({ message: "Recovery code is invalid!" });
+        return res.status(404).send({
+          field: "recoveryCode",
+          message: "Recovery code is invalid!",
+        });
 
       let user = await User.findById(recoveryCode.user._id);
+
+      const { error } = userValidator({ password: req.body.newPassword });
+      if (error.details.some((error) => error.path[0] === "password")) {
+        const errorsArray = error.details.map((error) => {
+          let errorObj = {};
+          errorObj.field = error.path[0];
+          errorObj.message = error.message;
+          return errorObj;
+        });
+        return res.status(400).send({ validationErrors: errorsArray });
+      }
 
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.newPassword, salt);
 
       user = await user.save();
-      user = await User.findById(user._id).select("-__v -password -pushToken");
+      user = await User.findById(user._id).select("-__v -password");
 
-      await recoveryCode.delete();
+      recoveryCode = await RecoveryCode.findByIdAndDelete(recoveryCode._id);
 
       return res.status(200).send(user);
     } else {
