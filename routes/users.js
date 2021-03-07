@@ -14,5 +14,10 @@ router.put(
   [userJwtMiddleware],
   userController.updateUserPassword
 );
+router.post(
+  "/send-contact-email",
+  [userJwtMiddleware],
+  userController.sendContactEmail
+);
 
 module.exports = router;
