@@ -5,6 +5,8 @@ const client = require("twilio")(
   process.env.TWILIO_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const { User, userValidator } = require("../models/User");
 const { RecoveryCode } = require("../models/RecoveryCode");
 
@@ -185,12 +187,14 @@ const userController = {
         messagingServiceSid: "MG8d321409bf416cf4cacb714821e0220c",
         to: `+${user.phoneNumber}`,
       })
-      .then((message) => console.log(message))
+      .then((message) => {
+        if (message.status === "accepted")
+          return res.status(200).send({
+            phoneNumber: user.phoneNumber,
+            recoveryCode: recoveryCode,
+          });
+      })
       .done();
-
-    return res
-      .status(200)
-      .send({ phoneNumber: user.phoneNumber, recoveryCode: recoveryCode });
   },
   updateUserPassword: async (req, res) => {
     if (req.body.password && req.body.newPassword) {
@@ -203,12 +207,10 @@ const userController = {
         user.password
       );
       if (!validPassword)
-        return res
-          .status(401)
-          .send({
-            field: "currentPassword",
-            message: "Password is incorrect!",
-          });
+        return res.status(401).send({
+          field: "currentPassword",
+          message: "Password is incorrect!",
+        });
 
       const { error } = userValidator({ password: req.body.newPassword });
       if (error.details.some((error) => error.path[0] === "password")) {
@@ -269,6 +271,48 @@ const userController = {
         .status(401)
         .send({ message: "Password or recovery code were not provided." });
     }
+  },
+  sendContactEmail: async (req, res) => {
+    let user;
+
+    user = await User.findOne({ email: req.body.email });
+    if (!user)
+      return res
+        .status(404)
+        .send({ field: "email", message: "Email does not exist!" });
+
+    user = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    if (!user)
+      return res.status(404).send({
+        field: "phoneNumber",
+        message: "Phone number does not exist!",
+      });
+
+    const emailMsg = {
+      to: "isaac.meedinaa@gmail.com",
+      from: req.body.email,
+      subject: "Chicago Boost App Contact Form",
+      html: `<strong>${req.body.message}</strong>`,
+    };
+
+    sgMail
+      .send(emailMsg)
+      .then(() => {
+        client.messages
+          .create({
+            body: `Your contact email was successfully sent. Please wait 1-3 days for a response.`,
+            messagingServiceSid: "MG8d321409bf416cf4cacb714821e0220c",
+            to: `+${req.body.phoneNumber}`,
+          })
+          .then((message) => {
+            if (message.status === "accepted")
+              return res.status(200).send({ successMessage: "Email sent!" });
+          })
+          .done();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   },
 };
 
