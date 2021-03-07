@@ -13,10 +13,11 @@ const upload = multer({
   limits: { fileSize: 1024 * 1024 * 10 },
 });
 const dealController = require("../controllers/dealController");
+const userJwtMiddleware = require("../middleware/userJwtMiddleware");
 
 const router = express.Router();
 
-router.get("/", dealController.getDeals);
+router.get("/", [userJwtMiddleware], dealController.getDeals);
 router.get("/:id", dealController.getDeal);
 router.post("/", upload.array("multiplePhotos", 10), dealController.createDeal);
 router.put(

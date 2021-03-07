@@ -90,12 +90,10 @@ const userController = {
     return res.status(200).send(resObj);
   },
   updateUser: async (req, res) => {
-    let userPassword = await User.findById(req.params.id).select(
-      "password -_id"
-    );
+    let userPassword = await User.findById(req.params.id).select("password");
 
     if (!userPassword)
-      return res.send(404).send({ message: "User was not found!" });
+      return res.status(404).send({ message: "User was not found!" });
 
     let user = {
       firstName: req.body.firstName,
@@ -106,6 +104,20 @@ const userController = {
       pushToken: req.body.pushToken,
       admin: req.body.admin,
     };
+
+    const userEmail = await User.findOne({ email: req.body.email });
+    if (userEmail && userEmail._id.toString() !== req.params.id)
+      return res
+        .status(401)
+        .send({ field: "email", message: "Email is taken!" });
+
+    const userPhoneNumber = await User.findOne({
+      phoneNumber: req.body.phoneNumber,
+    });
+    if (userPhoneNumber && userPhoneNumber._id.toString() !== req.params.id)
+      return res
+        .status(401)
+        .send({ field: "phoneNumber", message: "Phone number is taken!" });
 
     const { error } = userValidator(user);
     if (error) {
@@ -127,7 +139,6 @@ const userController = {
           email: req.body.email,
           phoneNumber: req.body.phoneNumber,
           password: userPassword.password,
-          pushToken: req.body.pushToken,
           admin: req.body.admin,
         },
         {
@@ -194,7 +205,21 @@ const userController = {
       if (!validPassword)
         return res
           .status(401)
-          .send({ field: "password", message: "Password is incorrect!" });
+          .send({
+            field: "currentPassword",
+            message: "Password is incorrect!",
+          });
+
+      const { error } = userValidator({ password: req.body.newPassword });
+      if (error.details.some((error) => error.path[0] === "password")) {
+        const errorsArray = error.details.map((error) => {
+          let errorObj = {};
+          errorObj.field = error.path[0];
+          errorObj.message = error.message;
+          return errorObj;
+        });
+        return res.status(400).send({ validationErrors: errorsArray });
+      }
 
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(req.body.newPassword, salt);
