@@ -30,7 +30,7 @@ const userController = {
     }
   },
   registerUser: async (req, res) => {
-    const { error } = userValidator(req.body);
+    const { error } = userValidator(req.body, req.language);
     if (error) {
       const errorsArray = error.details.map((error) => {
         let errorObj = {};
@@ -44,16 +44,26 @@ const userController = {
     let user;
 
     user = await User.findOne({ email: req.body.email });
+    let emailTakenMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      emailTakenMsg = "Email is taken!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      emailTakenMsg = "¡El correo electrónico está tomado!";
+    }
     if (user)
-      return res
-        .status(400)
-        .send({ field: "email", message: "Email is taken!" });
+      return res.status(400).send({ field: "email", message: emailTakenMsg });
 
     user = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    let phoneNumberTakenMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      phoneNumberTakenMsg = "Phone number is taken!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      phoneNumberTakenMsg = "¡El número de teléfono está tomado!";
+    }
     if (user)
       return res
         .status(400)
-        .send({ field: "phoneNumber", message: "Phone number is taken!" });
+        .send({ field: "phoneNumber", message: phoneNumberTakenMsg });
 
     user = await User.findOne({ email: req.body.pushToken });
     if (user)
@@ -108,20 +118,30 @@ const userController = {
     };
 
     const userEmail = await User.findOne({ email: req.body.email });
+    let emailTakenMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      emailTakenMsg = "Email is taken!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      emailTakenMsg = "¡El correo electrónico está tomado!";
+    }
     if (userEmail && userEmail._id.toString() !== req.params.id)
-      return res
-        .status(401)
-        .send({ field: "email", message: "Email is taken!" });
+      return res.status(401).send({ field: "email", message: emailTakenMsg });
 
     const userPhoneNumber = await User.findOne({
       phoneNumber: req.body.phoneNumber,
     });
+    let phoneNumberTakenMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      phoneNumberTakenMsg = "Phone number is taken!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      phoneNumberTakenMsg = "¡El número de teléfono está tomado!";
+    }
     if (userPhoneNumber && userPhoneNumber._id.toString() !== req.params.id)
       return res
         .status(401)
-        .send({ field: "phoneNumber", message: "Phone number is taken!" });
+        .send({ field: "phoneNumber", message: phoneNumberTakenMsg });
 
-    const { error } = userValidator(user);
+    const { error } = userValidator(user, req.language);
     if (error) {
       const errorsArray = error.details.map((error) => {
         let errorObj = {};
@@ -157,10 +177,16 @@ const userController = {
   },
   generateRecoveryCode: async (req, res) => {
     const user = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    let phoneNumberExistsMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      phoneNumberExistsMsg = "Phone number does not exist!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      phoneNumberExistsMsg = "¡El número de teléfono no existe!";
+    }
     if (!user)
       return res.status(404).send({
         field: "phoneNumber",
-        message: "Phone number does not exist!",
+        message: phoneNumberExistsMsg,
       });
 
     let code = randomize("0", 6);
@@ -206,13 +232,22 @@ const userController = {
         req.body.password,
         user.password
       );
+      let validPasswordMsg;
+      if (req.language === "en-US" || req.language === "en") {
+        validPasswordMsg = "Password is incorrect!";
+      } else if (req.language === "es-US" || req.language === "es") {
+        validPasswordMsg = "¡La contraseña es incorrecta!";
+      }
       if (!validPassword)
         return res.status(401).send({
           field: "currentPassword",
-          message: "Password is incorrect!",
+          message: validPasswordMsg,
         });
 
-      const { error } = userValidator({ password: req.body.newPassword });
+      const { error } = userValidator(
+        { password: req.body.newPassword },
+        req.language
+      );
       if (error.details.some((error) => error.path[0] === "password")) {
         const errorsArray = error.details.map((error) => {
           let errorObj = {};
@@ -238,15 +273,24 @@ const userController = {
       let recoveryCode = await RecoveryCode.findOne({
         code: req.body.recoveryCode,
       }).populate("user");
+      let validRecoveryCodeMsg;
+      if (req.language === "en-US" || req.language === "en") {
+        validRecoveryCodeMsg = "Recovery code is invalid!";
+      } else if (req.language === "es-US" || req.language === "es") {
+        validRecoveryCodeMsg = "¡El código de recuperación no es válido!";
+      }
       if (!recoveryCode)
         return res.status(404).send({
           field: "recoveryCode",
-          message: "Recovery code is invalid!",
+          message: validRecoveryCodeMsg,
         });
 
       let user = await User.findById(recoveryCode.user._id);
 
-      const { error } = userValidator({ password: req.body.newPassword });
+      const { error } = userValidator(
+        { password: req.body.newPassword },
+        req.language
+      );
       if (error.details.some((error) => error.path[0] === "password")) {
         const errorsArray = error.details.map((error) => {
           let errorObj = {};
@@ -267,25 +311,41 @@ const userController = {
 
       return res.status(200).send(user);
     } else {
-      return res
-        .status(401)
-        .send({ message: "Password or recovery code were not provided." });
+      let providedPasswordRecoveryCodeMsg;
+      if (req.language === "en-US" || req.language === "en") {
+        providedPasswordRecoveryCodeMsg =
+          "Password or recovery code were not provided.";
+      } else if (req.language === "es-US" || req.language === "es") {
+        providedPasswordRecoveryCodeMsg =
+          "No se proporcionó la contraseña ni el código de recuperación.";
+      }
+      return res.status(401).send({ message: providedPasswordRecoveryCodeMsg });
     }
   },
   sendContactEmail: async (req, res) => {
     let user;
 
     user = await User.findOne({ email: req.body.email });
+    let emailExistsMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      emailExistsMsg = "Email does not exist!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      emailExistsMsg = "¡El correo electrónico no existe!";
+    }
     if (!user)
-      return res
-        .status(404)
-        .send({ field: "email", message: "Email does not exist!" });
+      return res.status(404).send({ field: "email", message: emailExistsMsg });
 
     user = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    let phoneNumberExistsMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      phoneNumberExistsMsg = "Phone number does not exist!";
+    } else if (req.language === "es-US" || req.language === "es") {
+      phoneNumberExistsMsg = "¡El número de teléfono no existe!";
+    }
     if (!user)
       return res.status(404).send({
         field: "phoneNumber",
-        message: "Phone number does not exist!",
+        message: phoneNumberExistsMsg,
       });
 
     const emailMsg = {
@@ -295,12 +355,21 @@ const userController = {
       html: `<strong>${req.body.message}</strong>`,
     };
 
+    let textMsg;
+    if (req.language === "en-US" || req.language === "en") {
+      textMsg =
+        "Your contact email was successfully sent. Please wait 1-3 days for a response.";
+    } else if (req.language === "es-US" || req.language === "es") {
+      textMsg =
+        "Su correo electrónico de contacto se envió correctamente. Espere de 1 a 3 días para recibir una respuesta.";
+    }
+
     sgMail
       .send(emailMsg)
       .then(() => {
         client.messages
           .create({
-            body: `Your contact email was successfully sent. Please wait 1-3 days for a response.`,
+            body: textMsg,
             messagingServiceSid: "MG8d321409bf416cf4cacb714821e0220c",
             to: `+${req.body.phoneNumber}`,
           })

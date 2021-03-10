@@ -4,6 +4,10 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 Joi.objectId = require("joi-objectid")(Joi);
 const passwordComplexity = require("joi-password-complexity");
+const {
+  enUserValidations,
+  esUserValidations,
+} = require("../validations/userValidations");
 
 const userSchema = new mongoose.Schema(
   {
@@ -58,43 +62,39 @@ const passwordComplexityOptions = {
   requirementCount: 6,
 };
 
-const userValidator = (user) => {
+const userValidator = (user, language) => {
+  let validationMessages;
+
+  if (language === "en-US" || language === "en") {
+    validationMessages = enUserValidations;
+  } else if (language === "es-US" || language === "es") {
+    validationMessages = esUserValidations;
+  }
+
   const schema = Joi.object({
-    firstName: Joi.string().min(1).required().messages({
-      "string.base": "First name should be a string.",
-      "string.empty": "First name cannot be empty.",
-      "any.required": "First name is required.",
-      "string.min": "First name should at least be 1 characters long.",
-    }),
-    lastName: Joi.string().min(1).required().messages({
-      "string.base": "Last name should be a string.",
-      "string.empty": "Last name cannot be empty.",
-      "any.required": "Last name is required.",
-      "string.min": "Last name should at least be 1 characters long.",
-    }),
-    email: Joi.string().min(1).max(255).email().required().messages({
-      "string.base": "Email should be a string.",
-      "string.min": "Email should at least be 1 characters long.",
-      "string.max": "Email should not be over 255 characters long.",
-      "string.email": "Email must be a valid email.",
-      "any.required": "Email is required.",
-    }),
-    phoneNumber: Joi.string().min(11).max(11).required().messages({
-      "string.base": "Phone number should be a string.",
-      "string.empty": "Phone number cannot be empty.",
-      "any.required": "Phone number is required.",
-      "string.min": "Phone number should at least be 11 characters long.",
-      "string.max": "Phone number should not be over 11 characters long.",
-    }),
+    firstName: Joi.string()
+      .min(1)
+      .required()
+      .messages(validationMessages.firstName),
+    lastName: Joi.string()
+      .min(1)
+      .required()
+      .messages(validationMessages.lastName),
+    email: Joi.string()
+      .min(1)
+      .max(255)
+      .email()
+      .required()
+      .messages(validationMessages.email),
+    phoneNumber: Joi.string()
+      .min(11)
+      .max(11)
+      .required()
+      .messages(validationMessages.phoneNumber),
     password: passwordComplexity(passwordComplexityOptions)
       .required()
-      .messages({
-        "any.required": "Password is required.",
-      }),
-    pushToken: Joi.string().min(1).messages({
-      "string.base": "Push token should be a string.",
-      "string.min": "Push token should at least be 1 characters long.",
-    }),
+      .messages(validationMessages.password),
+    pushToken: Joi.string().min(1).messages(validationMessages.pushToken),
     admin: Joi.boolean().required(),
   }).options({ abortEarly: false });
 
