@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 
 const App = () => {
   useEffect(() => {
-    fetch("/api/v1/locations")
+    fetch("/api/v1/locations/testing")
       .then((resp) => resp.json())
       .then((data) => {
         console.log(data);

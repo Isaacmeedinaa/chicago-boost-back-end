@@ -2,6 +2,9 @@ const _ = require("lodash");
 const { Location, locationValidator } = require("../models/Location");
 
 const locationController = {
+  testing: (req, res) => {
+    return res.send({ message: "hello" });
+  },
   getLocations: async (req, res) => {
     const locations = await Location.find().select("-__v");
     return res.status(200).send(locations);

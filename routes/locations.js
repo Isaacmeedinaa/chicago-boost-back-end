@@ -3,6 +3,7 @@ const locationController = require("../controllers/locationController");
 
 const router = express.Router();
 
+router.get("/hello", locationController.testing);
 router.get("/", locationController.getLocations);
 router.get("/:id", locationController.getLocation);
 router.post("/", locationController.createLocation);
