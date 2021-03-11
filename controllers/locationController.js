@@ -17,7 +17,7 @@ const locationController = {
         return res.status(404).send({ error: "Location was not found!" });
 
       return res.status(200).send(location);
-    } catch {
+    } catch (err) {
       return res.status(404).send({ error: err });
     }
   },
