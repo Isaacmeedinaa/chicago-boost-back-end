@@ -162,6 +162,7 @@ const userController = {
           phoneNumber: req.body.phoneNumber,
           password: userPassword.password,
           admin: req.body.admin,
+          pushToken: req.body.pushToken,
         },
         {
           new: true,
@@ -382,6 +383,14 @@ const userController = {
       .catch((err) => {
         console.log(err);
       });
+  },
+  removePushToken: async (req, res) => {
+    let user = await User.findById(req.params.id);
+    user.pushToken = "noPushToken";
+    await user.save();
+
+    user = await User.findById(req.params.id);
+    return res.status(200).send(user);
   },
 };
 

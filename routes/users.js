@@ -28,5 +28,10 @@ router.post(
   [userJwtMiddleware, languageMiddleware],
   userController.sendContactEmail
 );
+router.put(
+  "/pushToken/:id",
+  [userJwtMiddleware],
+  userController.removePushToken
+);
 
 module.exports = router;
